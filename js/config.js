@@ -46,7 +46,7 @@
 const APP_CONFIG = {
   USE_MOCK_DATA: false,
 
-  GOOGLE_SHEETS_API_URL: "https://script.google.com/macros/s/AKfycbxqLFrwd5i5KGMlKEq507Q09MBi73ea0vEShBezar9EcSa1PuZvJVz448AyTcN_x-8okQ/exec",
+  GOOGLE_SHEETS_API_URL: "https://script.google.com/macros/s/AKfycbwaowph3AwSKiDV_qL8Hkv2QYjMiygSNWYTIAKUs13K_Q53aV6olBW5JAu4HwQiXP_rxQ/exec",
   BIOMETRIC_MIDDLEWARE_URL: "https://REPLACE_WITH_YOUR_LOCAL_MIDDLEWARE/api",
 
   COMPANY_NAME: "Simply Connect",
