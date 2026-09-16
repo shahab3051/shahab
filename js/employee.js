@@ -194,20 +194,32 @@
     });
     overlay.querySelector("#lvCancel").addEventListener("click", Utils.closeModal);
     overlay.querySelector("#lvSubmit").addEventListener("click", async () => {
+      const submitBtn = overlay.querySelector("#lvSubmit");
+      if (submitBtn.disabled) return; // already submitting — ignore extra clicks
       const from = document.getElementById("lvFrom").value, to = document.getElementById("lvTo").value;
       const leaveType = document.getElementById("lvType").value;
       const reason = document.getElementById("lvReason").value.trim();
       if (!from || !to || !reason) { Utils.toast("Please fill in all fields.", "error"); return; }
       if (to < from) { Utils.toast("End date can't be before the start date.", "error"); return; }
-      const bal = (await DataService.fetchLeaveBalances(employee.id))[leaveType];
-      const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
-      if (bal && days > bal.total - bal.used) {
-        Utils.toast(`You only have ${bal.total - bal.used} ${leaveType} day(s) remaining.`, "error");
-        return;
+      submitBtn.disabled = true;
+      const originalLabel = submitBtn.textContent;
+      submitBtn.textContent = "Submitting…";
+      try {
+        const bal = (await DataService.fetchLeaveBalances(employee.id))[leaveType];
+        const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+        if (bal && days > bal.total - bal.used) {
+          Utils.toast(`You only have ${bal.total - bal.used} ${leaveType} day(s) remaining.`, "error");
+          return;
+        }
+        await DataService.submitLeaveRequest({ empId: employee.id, leaveType, from, to, reason });
+        showRequestConfirmation("Leave request submitted", `Your ${leaveType} leave from ${Utils.fmtShortDate(from)} to ${Utils.fmtShortDate(to)} has been sent to your admin for approval. You'll be notified once it's reviewed.`);
+        renderLeaveView();
+      } catch (err) {
+        Utils.toast("Could not submit request. " + err.message, "error", 5000);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
       }
-      await DataService.submitLeaveRequest({ empId: employee.id, leaveType, from, to, reason });
-      showRequestConfirmation("Leave request submitted", `Your ${leaveType} leave from ${Utils.fmtShortDate(from)} to ${Utils.fmtShortDate(to)} has been sent to your admin for approval. You'll be notified once it's reviewed.`);
-      renderLeaveView();
     });
   });
 
@@ -225,15 +237,27 @@
     });
     overlay.querySelector("#regCancel").addEventListener("click", Utils.closeModal);
     overlay.querySelector("#regSubmit").addEventListener("click", async () => {
+      const submitBtn = overlay.querySelector("#regSubmit");
+      if (submitBtn.disabled) return;
       const date = document.getElementById("regDate").value;
       const inT = document.getElementById("regIn").value, outT = document.getElementById("regOut").value;
       const reason = document.getElementById("regReason").value.trim();
       if (!date || !inT || !outT || !reason) { Utils.toast("Please fill in all fields.", "error"); return; }
-      await DataService.submitRegularizationRequest({
-        empId: employee.id, date, requestedPunchIn: to12h(inT), requestedPunchOut: to12h(outT), reason,
-      });
-      showRequestConfirmation("Correction request submitted", `Your punch-correction request for ${Utils.fmtShortDate(date)} has been sent to your admin for approval.`);
-      renderLeaveView();
+      submitBtn.disabled = true;
+      const originalLabel = submitBtn.textContent;
+      submitBtn.textContent = "Submitting…";
+      try {
+        await DataService.submitRegularizationRequest({
+          empId: employee.id, date, requestedPunchIn: to12h(inT), requestedPunchOut: to12h(outT), reason,
+        });
+        showRequestConfirmation("Correction request submitted", `Your punch-correction request for ${Utils.fmtShortDate(date)} has been sent to your admin for approval.`);
+        renderLeaveView();
+      } catch (err) {
+        Utils.toast("Could not submit request. " + err.message, "error", 5000);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
+      }
     });
   });
 
