@@ -16,7 +16,9 @@ const Utils = (() => {
     return `${DOW[dt.getDay()]}, ${MONTHS[m - 1]} ${d}, ${y}`;
   }
   function fmtShortDate(dateStr) {
-    const [y, m, d] = dateStr.split("-").map(Number);
+    if (!dateStr) return "—";
+    const [y, m, d] = String(dateStr).split("-").map(Number);
+    if (!y || !m || !d) return "—";
     return `${d} ${MONTHS[m - 1].slice(0, 3)} ${y}`;
   }
   function statusColorVar(status) {
@@ -105,7 +107,10 @@ const Utils = (() => {
   }
 
   function relTime(iso) {
-    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (!iso) return "—";
+    const ms = new Date(iso).getTime();
+    if (Number.isNaN(ms)) return "—";
+    const mins = Math.round((Date.now() - ms) / 60000);
     if (mins < 1) return "just now";
     if (mins === 1) return "1 min ago";
     if (mins < 60) return `${mins} min ago`;
