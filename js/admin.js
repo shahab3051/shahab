@@ -94,17 +94,23 @@
     deptList.forEach((d) => { const o = document.createElement("option"); o.textContent = d; sel.appendChild(o); });
   });
 
-  renderOverview();
-  renderEmployees();
-  renderLive();
-  renderDepartments();
-  renderReportsShell();
-  renderSync();
-  renderRequests();
-  renderPayroll();
-  renderSettings();
-  startLiveFeedSimulation();
-  refreshNotifDot();
+  // See employee.js for why this is wrapped: without it, one throwing
+  // section (most often a chart drawn before its canvas has a real size)
+  // silently stops every render call listed after it.
+  function safeRender(name, fn) {
+    try { fn(); } catch (err) { console.error(`[admin.js] ${name} failed:`, err); }
+  }
+  safeRender("renderOverview", renderOverview);
+  safeRender("renderEmployees", renderEmployees);
+  safeRender("renderLive", renderLive);
+  safeRender("renderDepartments", renderDepartments);
+  safeRender("renderReportsShell", renderReportsShell);
+  safeRender("renderSync", renderSync);
+  safeRender("renderRequests", renderRequests);
+  safeRender("renderPayroll", renderPayroll);
+  safeRender("renderSettings", renderSettings);
+  safeRender("startLiveFeedSimulation", startLiveFeedSimulation);
+  safeRender("refreshNotifDot", refreshNotifDot);
   window.addEventListener("resize", Utils.debounce(renderOverviewCharts, 200));
 
   /* ------------------------------ notifications ------------------------------ */
