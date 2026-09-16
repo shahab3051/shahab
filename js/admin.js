@@ -664,10 +664,10 @@
       </tr>`;
     }).join("") || `<tr><td colspan="7">${emptyRow("No requests in this filter.")}</td></tr>`;
 
-    document.querySelectorAll(".req-approve").forEach((b) => b.addEventListener("click", () => decideRequest(b.dataset.id, "Approved")));
-    document.querySelectorAll(".req-reject").forEach((b) => b.addEventListener("click", () => decideRequest(b.dataset.id, "Rejected")));
+    document.querySelectorAll(".req-approve").forEach((b) => b.addEventListener("click", () => decideRequest(b.dataset.id, "Approved", b)));
+    document.querySelectorAll(".req-reject").forEach((b) => b.addEventListener("click", () => decideRequest(b.dataset.id, "Rejected", b)));
   }
-  async function decideRequest(id, decision) {
+  async function decideRequest(id, decision, sourceBtn) {
     let note = "";
     if (decision === "Rejected") {
       const overlay = Utils.openModal("Reject request", `
@@ -687,10 +687,20 @@
       const ok = await Utils.confirmDialog("Approve this request? This will update the employee's leave balance or attendance record.", { confirmLabel: "Approve", tone: "ok" });
       if (!ok) return;
     }
-    await DataService.reviewRequest(id, decision, note);
-    Utils.toast(`Request ${decision.toLowerCase()}.`);
-    drawRequestsTable();
-    refreshNotifDot();
+    // Disable both buttons in this row immediately so a slow response can't
+    // be double-clicked into two concurrent Accept/Reject calls for the
+    // same request (which was making things feel even slower/stuck).
+    const row = sourceBtn ? sourceBtn.closest("tr") : null;
+    if (row) row.querySelectorAll("button").forEach((b) => (b.disabled = true));
+    try {
+      await DataService.reviewRequest(id, decision, note);
+      Utils.toast(`Request ${decision.toLowerCase()}.`);
+      drawRequestsTable();
+      refreshNotifDot();
+    } catch (err) {
+      Utils.toast("Could not update request. " + err.message, "error", 5000);
+      if (row) row.querySelectorAll("button").forEach((b) => (b.disabled = false));
+    }
   }
 
   /* ------------------------------ payroll ------------------------------ */
