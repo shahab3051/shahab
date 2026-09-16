@@ -91,21 +91,29 @@
   document.getElementById("greeting").textContent = `Welcome back, ${employee.name.split(" ")[0]}`;
   document.getElementById("todayLongDate").textContent = Utils.fmtLongDate(Utils.todayStr());
 
-  renderOverview();
-  renderCalendar();
-  renderStats();
-  renderHistory();
-  renderProfile();
-  renderLeaveView();
-  renderPayrollView();
-  renderSettingsView();
-  refreshNotifDot();
+  // Each section renders independently: if one throws (e.g. a chart, or a
+  // sheet column that's missing/empty for this employee), it's logged to
+  // the console but every OTHER section — profile, leave, payroll — still
+  // renders. Previously these ran as plain sequential calls, so a single
+  // error anywhere in this list silently stopped everything after it.
+  function safeRender(name, fn) {
+    try { fn(); } catch (err) { console.error(`[employee.js] ${name} failed:`, err); }
+  }
+  safeRender("renderOverview", renderOverview);
+  safeRender("renderCalendar", renderCalendar);
+  safeRender("renderStats", renderStats);
+  safeRender("renderHistory", renderHistory);
+  safeRender("renderProfile", renderProfile);
+  safeRender("renderLeaveView", renderLeaveView);
+  safeRender("renderPayrollView", renderPayrollView);
+  safeRender("renderSettingsView", renderSettingsView);
+  safeRender("refreshNotifDot", refreshNotifDot);
 
   window.addEventListener("resize", Utils.debounce(refreshAllCharts, 200));
   function refreshAllCharts() {
-    renderOverview(true);
-    renderStats(true);
-    renderProfile(true);
+    safeRender("renderOverview", () => renderOverview(true));
+    safeRender("renderStats", () => renderStats(true));
+    safeRender("renderProfile", () => renderProfile(true));
   }
 
   /* ------------------------------ notifications ------------------------------ */
