@@ -260,9 +260,17 @@ const Utils = (() => {
   function drawDonutChart(canvas, segments, opts = {}) {
     const { ctx, w, h } = fitCanvas(canvas);
     ctx.clearRect(0, 0, w, h);
+    // Canvas can briefly report 0 width/height right at page load (before
+    // the browser has finished laying out the view it sits in). Skip this
+    // draw rather than pass a negative radius to ctx.arc(), which throws
+    // and — since these render calls run one after another with no
+    // try/catch — would stop every later render call (profile, leave,
+    // etc.) from ever running. refreshAllCharts() re-draws on resize/tab
+    // switch anyway, so this just means "wait for a size that makes sense".
+    if (w < 10 || h < 10) return;
     const cx = w / 2, cy = h / 2;
-    const rOuter = Math.min(w, h) / 2 - 4;
-    const rInner = rOuter * (opts.thickness || 0.62);
+    const rOuter = Math.max(1, Math.min(w, h) / 2 - 4);
+    const rInner = Math.max(0, rOuter * (opts.thickness || 0.62));
     const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
     let start = -Math.PI / 2;
 
